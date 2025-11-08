@@ -1,0 +1,731 @@
+﻿<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>برنامه هفتگی راهبران آموزشی - ناحیه ۳ شیراز</title>
+
+  <!-- Google Fonts (Vazirmatn) -->
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- html2pdf.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <!-- Signature Pad -->
+  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+
+  <style>
+    body { font-family: 'Vazirmatn', sans-serif; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); }
+    .table-row { @apply border-b border-gray-300; }
+    .signature-box { width: 200px; height: 100px; border: 2px dashed #38bdf8; border-radius: 8px; background: #f8faff; touch-action: none; }
+    .date-wrapper { position: relative; }
+    .jalali-equivalent { font-size: 0.8em; color: #555; margin-top: 2px; }
+    .base-select { height: 100px; } /* بهبود UX: افزایش ارتفاع برای انتخاب چندگانه */
+    @media print {
+      body { background: white; margin: 5mm; }
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      table { font-size: 10px !important; page-break-inside: auto; border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #ddd; padding: 6px !important; word-break: break-word; hyphens: auto; white-space: normal !important; vertical-align: top; }
+      th { background-color: #f2f2f2; }
+      .text-content { white-space: pre-wrap !important; overflow-wrap: break-word !important; height: auto !important; min-height: 20px; overflow: visible !important; }
+      .description-cell { max-width: 250px; word-wrap: break-word; }
+      .notes-cell { max-width: 200px; word-wrap: break-word; }
+      .base-cell { max-width: 100px; }
+      .status-cell { max-width: 80px; }
+      .signature-box { border: 1px solid #000 !important; }
+      @page { margin: 8mm; size: A4; }
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-6">
+
+<div class="max-w-7xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-8" id="formContainer">
+
+  <!-- Header -->
+  <div class="text-center mb-8 print-only">
+    <h1 class="text-2xl md:text-3xl font-bold text-sky-700">برنامه هفتگی راهبران آموزشی استان فارس</h1>
+    <p class="text-lg text-gray-700">سال تحصیلی ۱۴۰۴/۱۴۰۵</p>
+    <p class="text-md text-gray-600">نام اداره آموزش و پرورش ناحیه ۳ شیراز</p>
+  </div>
+
+  <!-- راهبر Info -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 no-print">
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">نام و نام خانوادگی راهبر آموزشی</label>
+      <input id="leaderName" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" value="اسماعیل قاسمی" />
+    </div>
+    <div class="date-wrapper">
+      <label class="block text-sm font-medium text-gray-700 mb-1">تاریخ شروع هفته (میلادی)</label>
+      <input id="weekDateMiladi" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+      <div id="weekDateJalali" class="jalali-equivalent"></div>
+    </div>
+  </div>
+
+  <!-- Main Table -->
+  <div class="overflow-x-auto rounded-lg shadow-md">
+    <table class="w-full text-sm text-right border-collapse" id="weeklyTable">
+      <thead class="bg-gradient-to-l from-sky-600 to-sky-500 text-white">
+        <tr>
+          <th class="px-3 py-3">روز</th>
+          <th class="px-3 py-3">تاریخ (میلادی)</th>
+          <th class="px-3 py-3">مدرسه</th>
+          <th class="px-3 py-3">پایه</th>
+          <th class="px-3 py-3">تلفن مدرسه</th>
+          <th class="px-3 py-3">شرح فعالیت</th>
+          <th class="px-3 py-3">وضعیت</th>
+          <th class="px-3 py-3">ملاحظات</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- شنبه -->
+        <tr class="table-row hover:bg-sky-50 transition">
+          <td class="px-3 py-2 font-medium">شنبه</td>
+          <td class="date-wrapper"><input type="date" class="date-input-miladi w-full px-2 py-1 border rounded" /><div class="jalali-equivalent"></div></td>
+          <td><input type="text" class="w-full px-2 py-1 border rounded" /></td>
+          <td class="base-cell">
+            <select class="base-select w-full px-2 py-1 border rounded" multiple>
+              <option value="اول">اول</option>
+              <option value="دوم">دوم</option>
+              <option value="سوم">سوم</option>
+              <option value="چهارم">چهارم</option>
+              <option value="پنجم">پنجم</option>
+              <option value="ششم">ششم</option>
+            </select>
+          </td>
+          <td><input type="text" class="w-full px-2 py-1 border rounded" /></td>
+          <td class="description-cell"><textarea class="w-full px-2 py-1 border rounded resize-y" rows="3"></textarea></td>
+          <td class="status-cell text-center">
+            <select class="status-select w-full px-2 py-1 border rounded">
+              <option value="">انتخاب کنید</option>
+              <option value="انجام شد">انجام شد</option>
+              <option value="انجام نشد">انجام نشد</option>
+            </select>
+          </td>
+          <td class="notes-cell"><textarea class="w-full px-2 py-1 border rounded resize-y" rows="3"></textarea></td>
+        </tr>
+        <!-- یکشنبه -->
+        <tr class="table-row hover:bg-sky-50 transition">
+          <td class="px-3 py-2 font-medium">یکشنبه</td>
+          <td class="date-wrapper"><input type="date" class="date-input-miladi w-full px-2 py-1 border rounded" /><div class="jalali-equivalent"></div></td>
+          <td><input type="text" class="w-full px-2 py-1 border rounded" /></td>
+          <td class="base-cell">
+            <select class="base-select w-full px-2 py-1 border rounded" multiple>
+              <option value="اول">اول</option>
+              <option value="دوم">دوم</option>
+              <option value="سوم">سوم</option>
+              <option value="چهارم">چهارم</option>
+              <option value="پنجم">پنجم</option>
+              <option value="ششم">ششم</option>
+            </select>
+          </td>
+          <td><input type="text" class="w-full px-2 py-1 border rounded" /></td>
+          <td class="description-cell"><textarea class="w-full px-2 py-1 border rounded resize-y" rows="3"></textarea></td>
+          <td class="status-cell text-center">
+            <select class="status-select w-full px-2 py-1 border rounded">
+              <option value="">انتخاب کنید</option>
+              <option value="انجام شد">انجام شد</option>
+              <option value="انجام نشد">انجام نشد</option>
+            </select>
+          </td>
+          <td class="notes-cell"><textarea class="w-full px-2 py-1 border rounded resize-y" rows="3"></textarea></td>
+        </tr>
+        <!-- دوشنبه -->
+        <tr class="table-row hover:bg-sky-50 transition">
+          <td class="px-3 py-2 font-medium">دوشنبه</td>
+          <td class="date-wrapper"><input type="date" class="date-input-miladi w-full px-2 py-1 border rounded" /><div class="jalali-equivalent"></div></td>
+          <td><input type="text" class="w-full px-2 py-1 border rounded" /></td>
+          <td class="base-cell">
+            <select class="base-select w-full px-2 py-1 border rounded" multiple>
+              <option value="اول">اول</option>
+              <option value="دوم">دوم</option>
+              <option value="سوم">سوم</option>
+              <option value="چهارم">چهارم</option>
+              <option value="پنجم">پنجم</option>
+              <option value="ششم">ششم</option>
+            </select>
+          </td>
+          <td><input type="text" class="w-full px-2 py-1 border rounded" /></td>
+          <td class="description-cell"><textarea class="w-full px-2 py-1 border rounded resize-y" rows="3"></textarea></td>
+          <td class="status-cell text-center">
+            <select class="status-select w-full px-2 py-1 border rounded">
+              <option value="">انتخاب کنید</option>
+              <option value="انجام شد">انجام شد</option>
+              <option value="انجام نشد">انجام نشد</option>
+            </select>
+          </td>
+          <td class="notes-cell"><textarea class="w-full px-2 py-1 border rounded resize-y" rows="3"></textarea></td>
+        </tr>
+        <!-- سه‌شنبه -->
+        <tr class="table-row hover:bg-sky-50 transition">
+          <td class="px-3 py-2 font-medium">سه‌شنبه</td>
+          <td class="date-wrapper"><input type="date" class="date-input-miladi w-full px-2 py-1 border rounded" /><div class="jalali-equivalent"></div></td>
+          <td><input type="text" class="w-full px-2 py-1 border rounded" /></td>
+          <td class="base-cell">
+            <select class="base-select w-full px-2 py-1 border rounded" multiple>
+              <option value="اول">اول</option>
+              <option value="دوم">دوم</option>
+              <option value="سوم">سوم</option>
+              <option value="چهارم">چهارم</option>
+              <option value="پنجم">پنجم</option>
+              <option value="ششم">ششم</option>
+            </select>
+          </td>
+          <td><input type="text" class="w-full px-2 py-1 border rounded" /></td>
+          <td class="description-cell"><textarea class="w-full px-2 py-1 border rounded resize-y" rows="3"></textarea></td>
+          <td class="status-cell text-center">
+            <select class="status-select w-full px-2 py-1 border rounded">
+              <option value="">انتخاب کنید</option>
+              <option value="انجام شد">انجام شد</option>
+              <option value="انجام نشد">انجام نشد</option>
+            </select>
+          </td>
+          <td class="notes-cell"><textarea class="w-full px-2 py-1 border rounded resize-y" rows="3"></textarea></td>
+        </tr>
+        <!-- چهارشنبه -->
+        <tr class="table-row hover:bg-sky-50 transition">
+          <td class="px-3 py-2 font-medium">چهارشنبه</td>
+          <td class="date-wrapper"><input type="date" class="date-input-miladi w-full px-2 py-1 border rounded" /><div class="jalali-equivalent"></div></td>
+          <td><input type="text" class="w-full px-2 py-1 border rounded" /></td>
+          <td class="base-cell">
+            <select class="base-select w-full px-2 py-1 border rounded" multiple>
+              <option value="اول">اول</option>
+              <option value="دوم">دوم</option>
+              <option value="سوم">سوم</option>
+              <option value="چهارم">چهارم</option>
+              <option value="پنجم">پنجم</option>
+              <option value="ششم">ششم</option>
+            </select>
+          </td>
+          <td><input type="text" class="w-full px-2 py-1 border rounded" /></td>
+          <td class="description-cell"><textarea class="w-full px-2 py-1 border rounded resize-y" rows="3"></textarea></td>
+          <td class="status-cell text-center">
+            <select class="status-select w-full px-2 py-1 border rounded">
+              <option value="">انتخاب کنید</option>
+              <option value="انجام شد">انجام شد</option>
+              <option value="انجام نشد">انجام نشد</option>
+            </select>
+          </td>
+          <td class="notes-cell"><textarea class="w-full px-2 py-1 border rounded resize-y" rows="3"></textarea></td>
+        </tr>
+        <!-- پنج‌شنبه -->
+        <tr class="table-row hover:bg-sky-50 transition">
+          <td class="px-3 py-2 font-medium">پنج‌شنبه</td>
+          <td class="date-wrapper"><input type="date" class="date-input-miladi w-full px-2 py-1 border rounded" /><div class="jalali-equivalent"></div></td>
+          <td><input type="text" class="w-full px-2 py-1 border rounded" /></td>
+          <td class="base-cell">
+            <select class="base-select w-full px-2 py-1 border rounded" multiple>
+              <option value="اول">اول</option>
+              <option value="دوم">دوم</option>
+              <option value="سوم">سوم</option>
+              <option value="چهارم">چهارم</option>
+              <option value="پنجم">پنجم</option>
+              <option value="ششم">ششم</option>
+            </select>
+          </td>
+          <td><input type="text" class="w-full px-2 py-1 border rounded" /></td>
+          <td class="description-cell"><textarea class="w-full px-2 py-1 border rounded resize-y" rows="3"></textarea></td>
+          <td class="status-cell text-center">
+            <select class="status-select w-full px-2 py-1 border rounded">
+              <option value="">انتخاب کنید</option>
+              <option value="انجام شد">انجام شد</option>
+              <option value="انجام نشد">انجام نشد</option>
+            </select>
+          </td>
+          <td class="notes-cell"><textarea class="w-full px-2 py-1 border rounded resize-y" rows="3"></textarea></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- فعالیت‌های مازاد -->
+  <div class="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+    <label class="block font-medium text-amber-800 mb-2">فعالیت‌های مازاد بر برنامه</label>
+    <textarea id="extraActivities" class="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 resize-y" rows="4" placeholder="فعالیت‌هایی که پیش‌بینی نشده و انجام شده است..."></textarea>
+  </div>
+
+  <!-- جدول پیشنهاد و تحلیل راهبردی -->
+  <div class="mt-6 p-4 bg-green-50 rounded-lg border border-green-200 no-print">
+    <label class="block font-medium text-green-800 mb-2">پیشنهادها و تحلیل راهبردی</label>
+    <table class="w-full text-sm text-right border-collapse" id="suggestionsTable">
+      <thead class="bg-green-100">
+        <tr>
+          <th class="px-3 py-2">موضوع</th>
+          <th class="px-3 py-2">پیشنهاد / تحلیل</th>
+          <th class="px-3 py-2">اولویت</th>
+          <th class="px-3 py-2">عملیات</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- ردیف نمونه -->
+        <tr class="hover:bg-green-50">
+          <td><input type="text" class="w-full px-2 py-1 border rounded" placeholder="موضوع..." /></td>
+          <td><textarea class="w-full px-2 py-1 border rounded resize-y" rows="2" placeholder="توضیح..."></textarea></td>
+          <td>
+            <select class="w-full px-2 py-1 border rounded">
+              <option>کم</option>
+              <option>متوسط</option>
+              <option>زیاد</option>
+            </select>
+          </td>
+          <td><button onclick="addSuggestionRow()" class="px-2 py-1 bg-green-500 text-white rounded text-xs">+</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- امضاها -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+    <div>
+      <p class="font-medium text-gray-700 mb-2">امضای راهبر آموزشی</p>
+      <canvas id="signature1" class="signature-box"></canvas>
+      <div class="flex gap-2 mt-2">
+        <button onclick="clearSig(1)" class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm">پاک کن</button>
+      </div>
+    </div>
+    <div>
+      <p class="font-medium text-gray-700 mb-2">امضای معاون / کارشناس آموزش</p>
+      <canvas id="signature2" class="signature-box"></canvas>
+      <div class="flex gap-2 mt-2">
+        <button onclick="clearSig(2)" class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm">پاک کن</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- دکمه‌ها -->
+  <div class="flex flex-wrap gap-3 mt-8 justify-center no-print">
+    <button onclick="saveForm()" class="px-6 py-3 bg-gradient-to-r from-sky-600 to-sky-500 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition">ذخیره فرم</button>
+    <button onclick="printPDF()" class="px-6 py-3 bg-green-600 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition">چاپ PDF</button>
+    <button onclick="exportJSON()" class="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition">خروج JSON</button>
+    <button onclick="importJSON()" class="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition">ورود JSON</button>
+    <button onclick="showRecords()" class="px-6 py-3 bg-gray-600 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition">نمایش ثبت‌ها</button>
+  </div>
+
+  <!-- جدول ثبت‌شده‌ها -->
+  <div id="recordsTable" class="mt-10 hidden no-print">
+    <h3 class="text-lg font-bold text-center text-sky-700 mb-4">جدول فرم‌های ثبت‌شده</h3>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-right border-collapse" id="recordsBody">
+        <thead class="bg-gradient-to-l from-gray-700 to-gray-600 text-white">
+          <tr>
+            <th class="px-3 py-2">نام</th>
+            <th class="px-3 py-2">شماره هفته</th>
+            <th class="px-3 py-2">تعداد بازدید</th>
+            <th class="px-3 py-2">میانگین پایه</th>
+            <th class="px-3 py-2">تاریخ ثبت</th>
+            <th class="px-3 py-2">ساعت</th>
+            <th class="px-3 py-2">عملیات</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- فوتر -->
+  <div class="mt-12 text-center text-xs text-gray-500 print-only">
+    <p>سازنده: حسین هادی پور</p>
+    <p>این فرم به صورت الکترونیک تکمیل و تأیید شده است.</p>
+  </div>
+</div>
+
+<script>
+  // متغیرهای سراسری
+  let signaturePad1, signaturePad2;
+  const records = JSON.parse(localStorage.getItem('weeklyRecords')) || [];
+  let weekNumberCounter = records.length + 1; // شماره هفته جدید
+
+  // تابع تبدیل میلادی به شمسی
+  function miladiToJalali(dateStr) {
+    if (!dateStr) return '';
+    const [year, month, day] = dateStr.split('-').map(Number);
+    let jy = year - 621;
+    if (month > 2) jy += 1;
+    let jm = month < 3 ? month + 1 : month - 11;
+    let jd = day;
+    const g_days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    const j_days_in_month = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
+
+    let gy = year - 1600;
+    let gm = month - 1;
+    let gd = day - 1;
+
+    let g_day_no = 365 * gy + Math.floor((gy + 3) / 4) - Math.floor((gy + 99) / 100) + Math.floor((gy + 399) / 400);
+    for (let i = 0; i < gm; ++i) g_day_no += g_days_in_month[i];
+    if (gm > 1 && ((gy % 4 === 0 && gy % 100 !== 0) || (gy % 400 === 0))) g_day_no++;
+    g_day_no += gd;
+
+    let j_day_no = g_day_no - 79;
+
+    let j_np = Math.floor(j_day_no / 12053);
+    j_day_no %= 12053;
+
+    jy = 979 + 33 * j_np + 4 * Math.floor(j_day_no / 1461);
+    j_day_no %= 1461;
+
+    if (j_day_no >= 366) {
+      jy += Math.floor((j_day_no - 1) / 365);
+      j_day_no = (j_day_no - 1) % 365;
+    }
+
+    let i = 0;
+    for (; i < 11 && j_day_no >= j_days_in_month[i]; ++i) j_day_no -= j_days_in_month[i];
+
+    jm = i + 1;
+    jd = j_day_no + 1;
+
+    return `${jy}/${jm.toString().padStart(2, '0')}/${jd.toString().padStart(2, '0')}`;
+  }
+
+  // بروزرسانی معادل شمسی
+  function updateJalaliEquivalent(input, display) {
+    input.addEventListener('change', () => {
+      const jalali = miladiToJalali(input.value);
+      display.textContent = jalali ? `معادل شمسی: ${jalali}` : '';
+    });
+    // بروزرسانی اولیه اگر مقدار داشته باشد
+    if (input.value) {
+      const jalali = miladiToJalali(input.value);
+      display.textContent = jalali ? `معادل شمسی: ${jalali}` : '';
+    }
+  }
+
+  // اعمال برای همه فیلدهای تاریخ
+  document.querySelectorAll('.date-input-miladi').forEach(input => {
+    const wrapper = input.closest('.date-wrapper');
+    const display = wrapper.querySelector('.jalali-equivalent');
+    updateJalaliEquivalent(input, display);
+  });
+
+  const weekDateMiladi = document.getElementById('weekDateMiladi');
+  const weekDateJalali = document.getElementById('weekDateJalali');
+  updateJalaliEquivalent(weekDateMiladi, weekDateJalali);
+
+  // امضاها با پشتیبانی بهتر از تاچ
+  window.onload = () => {
+    const canvas1 = document.getElementById('signature1');
+    const canvas2 = document.getElementById('signature2');
+    signaturePad1 = new SignaturePad(canvas1, { penColor: 'black' });
+    signaturePad2 = new SignaturePad(canvas2, { penColor: 'black' });
+    loadFromStorage();
+    renderRecords();
+  };
+
+  function clearSig(num) {
+    if (num === 1) signaturePad1.clear();
+    else signaturePad2.clear();
+  }
+
+  // ذخیره خودکار
+  let saveTimeout;
+  document.querySelectorAll('input, textarea, select').forEach(el => {
+    el.addEventListener('input', () => {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(autoSave, 1000);
+    });
+    el.addEventListener('change', () => {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(autoSave, 1000);
+    });
+  });
+
+  function autoSave() {
+    const data = collectFormData();
+    localStorage.setItem('tempForm', JSON.stringify(data));
+  }
+
+  function loadFromStorage() {
+    const temp = localStorage.getItem('tempForm');
+    if (temp) {
+      const data = JSON.parse(temp);
+      applyFormData(data);
+    }
+  }
+
+  // جمع‌آوری داده‌ها
+  function collectFormData() {
+    const rows = [];
+    document.querySelectorAll('#weeklyTable tbody tr').forEach(row => {
+      const cells = row.querySelectorAll('input, textarea, select');
+      const bases = Array.from(cells[2].selectedOptions).map(option => option.value);
+      rows.push({
+        day: row.cells[0].textContent.trim(),
+        dateMiladi: cells[0].value,
+        dateJalali: miladiToJalali(cells[0].value),
+        school: cells[1].value,
+        bases: bases,
+        phone: cells[3].value,
+        activity: cells[4].value,
+        status: cells[5].value,
+        notes: cells[6].value
+      });
+    });
+
+    const suggestions = [];
+    document.querySelectorAll('#suggestionsTable tbody tr').forEach(tr => {
+      const inputs = tr.querySelectorAll('input, textarea, select');
+      suggestions.push({
+        topic: inputs[0].value,
+        description: inputs[1].value,
+        priority: inputs[2].value
+      });
+    });
+
+    return {
+      leaderName: document.getElementById('leaderName').value,
+      weekDateMiladi: document.getElementById('weekDateMiladi').value,
+      weekDateJalali: miladiToJalali(document.getElementById('weekDateMiladi').value),
+      rows,
+      extraActivities: document.getElementById('extraActivities').value,
+      suggestions,
+      signature1: signaturePad1.toDataURL(),
+      signature2: signaturePad2.toDataURL(),
+      timestamp: new Date().toLocaleString('fa-IR'),
+      weekNumber: weekNumberCounter
+    };
+  }
+
+  function applyFormData(data) {
+    document.getElementById('leaderName').value = data.leaderName || '';
+    document.getElementById('weekDateMiladi').value = data.weekDateMiladi || '';
+    document.getElementById('weekDateJalali').textContent = data.weekDateJalali ? `معادل شمسی: ${data.weekDateJalali}` : '';
+    document.getElementById('extraActivities').value = data.extraActivities || '';
+
+    data.rows.forEach((r, i) => {
+      const row = document.querySelectorAll('#weeklyTable tbody tr')[i];
+      const cells = row.querySelectorAll('input, textarea, select');
+      cells[0].value = r.dateMiladi || '';
+      row.querySelector('.jalali-equivalent').textContent = r.dateJalali ? `معادل شمسی: ${r.dateJalali}` : '';
+      cells[1].value = r.school || '';
+      Array.from(cells[2].options).forEach(option => {
+        option.selected = r.bases ? r.bases.includes(option.value) : false;
+      });
+      cells[3].value = r.phone || '';
+      cells[4].value = r.activity || '';
+      cells[5].value = r.status || '';
+      cells[6].value = r.notes || '';
+    });
+
+    // اعمال پیشنهادها
+    const tbody = document.querySelector('#suggestionsTable tbody');
+    tbody.innerHTML = '';
+    data.suggestions.forEach(s => {
+      addSuggestionRow(s.topic, s.description, s.priority);
+    });
+    if (data.suggestions.length === 0) addSuggestionRow();
+
+    if (data.signature1) signaturePad1.fromDataURL(data.signature1);
+    if (data.signature2) signaturePad2.fromDataURL(data.signature2);
+  }
+
+  // اضافه کردن ردیف پیشنهاد
+  function addSuggestionRow(topic = '', desc = '', priority = 'متوسط') {
+    const tbody = document.querySelector('#suggestionsTable tbody');
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-green-50';
+    tr.innerHTML = `
+      <td><input type="text" class="w-full px-2 py-1 border rounded" value="${topic}" placeholder="موضوع..." /></td>
+      <td><textarea class="w-full px-2 py-1 border rounded resize-y" rows="2" placeholder="توضیح...">${desc}</textarea></td>
+      <td>
+        <select class="w-full px-2 py-1 border rounded">
+          <option ${priority === 'کم' ? 'selected' : ''}>کم</option>
+          <option ${priority === 'متوسط' ? 'selected' : ''}>متوسط</option>
+          <option ${priority === 'زیاد' ? 'selected' : ''}>زیاد</option>
+        </select>
+      </td>
+      <td>
+        <button onclick="this.parentElement.parentElement.remove()" class="px-2 py-1 bg-red-500 text-white rounded text-xs">-</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  // ذخیره نهایی
+  function saveForm() {
+    try {
+      const data = collectFormData();
+      if (!data.weekDateMiladi) {
+        Swal.fire('هشدار', 'تاریخ شروع هفته الزامی است!', 'warning');
+        return;
+      }
+
+      const existingIndex = records.findIndex(r => r.weekDateMiladi === data.weekDateMiladi);
+      if (existingIndex !== -1) {
+        records[existingIndex] = data;
+        Swal.fire('به‌روزرسانی!', 'فرم هفته با موفقیت به‌روزرسانی شد.', 'success');
+      } else {
+        records.push(data);
+        weekNumberCounter++;
+        Swal.fire('موفقیت!', 'فرم هفته جدید با موفقیت ذخیره شد.', 'success');
+      }
+
+      localStorage.setItem('weeklyRecords', JSON.stringify(records));
+      localStorage.removeItem('tempForm');
+      renderRecords();
+    } catch (err) {
+      Swal.fire('خطا', 'مشکل در ذخیره: ' + err.message, 'error');
+    }
+  }
+
+  // چاپ PDF با جایگزینی textarea ها برای نمایش کامل متن
+  function printPDF() {
+    // جایگزینی textarea ها با div برای چاپ
+    const textareas = document.querySelectorAll('textarea');
+    const textareaReplacements = [];
+    textareas.forEach(ta => {
+      const div = document.createElement('div');
+      div.className = 'text-content';
+      div.innerText = ta.value;
+      div.style.fontSize = '10px';
+      div.style.lineHeight = '1.2';
+      ta.parentNode.replaceChild(div, ta);
+      textareaReplacements.push({ div, ta });
+    });
+
+    // جایگزینی select.base-select با div
+    const baseSelects = document.querySelectorAll('.base-select');
+    const baseReplacements = [];
+    baseSelects.forEach(sel => {
+      const selected = Array.from(sel.selectedOptions).map(opt => opt.value).join(', ');
+      const div = document.createElement('div');
+      div.className = 'text-content';
+      div.innerText = selected || 'هیچ';
+      div.style.fontSize = '10px';
+      div.style.lineHeight = '1.2';
+      sel.parentNode.replaceChild(div, sel);
+      baseReplacements.push({ div, sel });
+    });
+
+    // جایگزینی status-select با div
+    const statusSelects = document.querySelectorAll('.status-select');
+    const statusReplacements = [];
+    statusSelects.forEach(sel => {
+      const div = document.createElement('div');
+      div.className = 'text-content';
+      div.innerText = sel.value || 'نامشخص';
+      div.style.fontSize = '10px';
+      div.style.lineHeight = '1.2';
+      sel.parentNode.replaceChild(div, sel);
+      statusReplacements.push({ div, sel });
+    });
+
+    const element = document.getElementById('formContainer');
+    const opt = {
+      margin: [0.2, 0.2, 0.2, 0.2],
+      filename: `WeeklyReport_${document.getElementById('weekDateMiladi').value || 'unknown'}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: true, scrollY: 0 },
+      jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+    html2pdf().set(opt).from(element).save().then(() => {
+      // برگرداندن عناصر
+      textareaReplacements.forEach(({ div, ta }) => div.parentNode.replaceChild(ta, div));
+      baseReplacements.forEach(({ div, sel }) => div.parentNode.replaceChild(sel, div));
+      statusReplacements.forEach(({ div, sel }) => div.parentNode.replaceChild(sel, div));
+    }).catch(err => {
+      Swal.fire('خطا', 'مشکل در تولید PDF: ' + err.message, 'error');
+      // در صورت خطا هم برگردان
+      textareaReplacements.forEach(({ div, ta }) => div.parentNode.replaceChild(ta, div));
+      baseReplacements.forEach(({ div, sel }) => div.parentNode.replaceChild(sel, div));
+      statusReplacements.forEach(({ div, sel }) => div.parentNode.replaceChild(sel, div));
+    });
+  }
+
+  // JSON
+  function exportJSON() {
+    const data = collectFormData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `report_${data.weekDateMiladi || 'temp'}.json`;
+    a.click();
+  }
+
+  function importJSON() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = e => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          applyFormData(data);
+          Swal.fire('موفقیت', 'داده‌ها با موفقیت بارگذاری شدند.', 'success');
+        } catch (err) {
+          Swal.fire('خطا', 'فایل JSON معتبر نیست!', 'error');
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
+
+  // نمایش ثبت‌ها
+  function renderRecords() {
+    const tbody = document.querySelector('#recordsBody tbody');
+    tbody.innerHTML = '';
+    records.forEach((r, i) => {
+      const doneCount = r.rows.filter(row => row.status === 'انجام شد').length;
+      const bases = r.rows.flatMap(row => row.bases || []).filter(Boolean);
+      const avgBase = bases.length ? (bases.reduce((a,b) => a + (parseInt(b.match(/\d+/)?.[0] || 0)), 0) / bases.length).toFixed(1) : '-';
+      const [date, time] = r.timestamp.split(', ');
+
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-sky-50 transition';
+      tr.innerHTML = `
+        <td class="px-3 py-2">${r.leaderName}</td>
+        <td class="px-3 py-2">${r.weekNumber || (i+1)}</td>
+        <td class="px-3 py-2">${doneCount}/6</td>
+        <td class="px-3 py-2">${avgBase}</td>
+        <td class="px-3 py-2">${date}</td>
+        <td class="px-3 py-2">${time}</td>
+        <td class="px-3 py-2">
+          <button onclick="loadRecord(${i})" class="text-xs px-2 py-1 bg-sky-600 text-white rounded">ویرایش</button>
+          <button onclick="deleteRecord(${i})" class="text-xs px-2 py-1 bg-red-600 text-white rounded">حذف</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function loadRecord(i) {
+    applyFormData(records[i]);
+    document.getElementById('recordsTable').classList.add('hidden');
+    Swal.fire('بارگذاری شد', 'فرم برای ویرایش بارگذاری شد.', 'info');
+  }
+
+  function deleteRecord(i) {
+    Swal.fire({
+      title: 'حذف؟',
+      text: "این فرم حذف خواهد شد!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'بله، حذف کن'
+    }).then(result => {
+      if (result.isConfirmed) {
+        records.splice(i, 1);
+        localStorage.setItem('weeklyRecords', JSON.stringify(records));
+        renderRecords();
+        Swal.fire('حذف شد!', '', 'success');
+      }
+    });
+  }
+
+  function showRecords() {
+    document.getElementById('recordsTable').classList.toggle('hidden');
+  }
+</script>
+
+</body>
+</html>
